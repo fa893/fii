@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النظام المالي للمهندس والتاجر</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;700;900&display=swap');
+        body { font-family: 'Noto Sans Arabic', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i>
+                    النظام المالي السحابي
+                </h1>
+                <p id="user-info" class="text-slate-500 text-sm mt-1">جاري الاتصال بالسحابة...</p>
+            </div>
+            <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md">
+                <i class="fa-solid fa-file-excel"></i>
+                تصدير Excel
+            </button>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex gap-2 mb-6 bg-white p-1 rounded-xl shadow-sm border border-slate-200 w-fit">
+            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="tab-btn px-6 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white shadow-lg">لوحة التحكم</button>
+            <button onclick="switchTab('data')" id="tab-btn-data" class="tab-btn px-6 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100">جدول البيانات</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <main id="dashboard" class="tab-content active space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center gap-3 mb-2 text-blue-600 text-sm font-bold">
+                        <i class="fa-solid fa-wallet"></i> الرصيد المتاح
+                    </div>
+                    <div id="stat-balance" class="text-2xl font-black">0.00 <span class="text-sm font-normal text-slate-400">د.أ</span></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-r-4 border-r-emerald-500">
+                    <div class="flex items-center gap-3 mb-2 text-emerald-600 text-sm font-bold">
+                        <i class="fa-solid fa-bolt"></i> راتب الهندسة
+                    </div>
+                    <div id="stat-engineering" class="text-2xl font-black">0.00</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-r-4 border-r-orange-500">
+                    <div class="flex items-center gap-3 mb-2 text-orange-600 text-sm font-bold">
+                        <i class="fa-solid fa-cart-shopping"></i> صافي التجارة
+                    </div>
+                    <div id="stat-commerce" class="text-2xl font-black">0.00</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-r-4 border-r-indigo-500">
+                    <div class="flex items-center gap-3 mb-2 text-indigo-600 text-sm font-bold">
+                        <i class="fa-solid fa-piggy-bank"></i> نسبة الادخار
+                    </div>
+                    <div id="stat-saving-rate" class="text-2xl font-black">0%</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold mb-6">توزيع المصاريف</h3>
+                    <div id="expenses-breakdown" class="space-y-4">
+                        <!-- Progress bars will be injected here -->
+                    </div>
+                </div>
+                <div class="bg-slate-800 text-white p-8 rounded-2xl shadow-xl">
+                    <h3 class="text-xl font-bold mb-6">ملخص الأداء العام</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between border-b border-slate-700 pb-2 text-emerald-400 font-bold">
+                            <span>إجمالي الدخل</span> <span id="summary-income">0.00</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-700 pb-2 text-rose-400 font-bold">
+                            <span>إجمالي المصاريف</span> <span id="summary-expense">0.00</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-700 pb-2 text-indigo-400 font-bold">
+                            <span>إجمالي الادخار</span> <span id="summary-savings">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Data/Form Tab -->
+        <main id="data" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Form -->
+                <aside class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-plus"></i> إضافة سجل</h3>
+                    <form id="finance-form" class="space-y-4">
+                        <input type="date" id="f-date" required class="w-full p-2 bg-slate-50 border rounded-lg">
+                        <select id="f-type" onchange="updateCategories()" class="w-full p-2 bg-slate-50 border rounded-lg">
+                            <option value="دخل">دخل</option>
+                            <option value="مصروف">مصروف</option>
+                            <option value="ادخار">ادخار</option>
+                        </select>
+                        <select id="f-category" class="w-full p-2 bg-slate-50 border rounded-lg"></select>
+                        <input type="number" id="f-amount" placeholder="المبلغ" step="0.01" required class="w-full p-2 bg-slate-50 border rounded-lg">
+                        <input type="text" id="f-note" placeholder="ملاحظة" class="w-full p-2 bg-slate-50 border rounded-lg">
+                        <button type="submit" class="w-full bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-900 transition-colors">حفظ في السحابة</button>
+                    </form>
+                </aside>
+
+                <!-- Table -->
+                <section class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right">
+                            <thead class="bg-slate-50 border-b">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold">التاريخ</th>
+                                    <th class="p-4 text-xs font-bold">التصنيف</th>
+                                    <th class="p-4 text-xs font-bold">البيان</th>
+                                    <th class="p-4 text-xs font-bold">المبلغ</th>
+                                    <th class="p-4 text-xs font-bold text-center">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-body" class="divide-y text-sm">
+                                <!-- Data rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configuration
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'finance-app-v1';
+
+        let currentUser = null;
+        let allTransactions = [];
+
+        const categories = {
+            'دخل': ['راتب هندسة الطاقة', 'عمولات تجارة إلكترونية', 'أخرى'],
+            'مصروف': ['سكن وفواتير', 'تجارة إلكترونية (إعلانات)', 'تجارة إلكترونية (بضاعة)', 'تطوير الذات', 'مستلزمات عامة', 'أخرى'],
+            'ادخار': ['صندوق الطوارئ', 'استثمارات', 'مدخرات عامة']
+        };
+
+        // Initialize Categories
+        window.updateCategories = () => {
+            const type = document.getElementById('f-type').value;
+            const catSelect = document.getElementById('f-category');
+            catSelect.innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
+        };
+        updateCategories();
+        document.getElementById('f-date').valueAsDate = new Date();
+
+        // Auth
+        signInAnonymously(auth).catch(console.error);
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-info').innerHTML = `<i class="fa-solid fa-cloud-check text-emerald-500"></i> متصل بالسحابة (ID: ${user.uid.substring(0,6)})`;
+                loadData(user.uid);
+            }
+        });
+
+        // Load Data
+        function loadData(uid) {
+            const q = query(collection(db, 'artifacts', appId, 'users', uid, 'transactions'));
+            onSnapshot(q, (snapshot) => {
+                allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort manual since composite indexes aren't allowed
+                allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderUI();
+            });
+        }
+
+        // Render Dashboard & Table
+        function renderUI() {
+            const body = document.getElementById('transactions-body');
+            body.innerHTML = '';
+
+            let stats = { ing: 0, commIn: 0, commOut: 0, inc: 0, exp: 0, sav: 0 };
+
+            allTransactions.forEach(t => {
+                // Calc stats
+                if (t.type === 'دخل') {
+                    stats.inc += t.amount;
+                    if (t.category === 'راتب هندسة الطاقة') stats.ing += t.amount;
+                    if (t.category === 'عمولات تجارة إلكترونية') stats.commIn += t.amount;
+                } else if (t.type === 'مصروف') {
+                    stats.exp += t.amount;
+                    if (t.category.includes('تجارة إلكترونية')) stats.commOut += t.amount;
+                } else if (t.type === 'ادخار') {
+                    stats.sav += t.amount;
+                }
+
+                // Render Table Row
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                row.innerHTML = `
+                    <td class="p-4 text-slate-500 font-sans">${t.date}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${t.type === 'دخل' ? 'bg-emerald-100 text-emerald-700' : t.type === 'مصروف' ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'}">${t.category}</span></td>
+                    <td class="p-4 text-slate-700">${t.note || '-'}</td>
+                    <td class="p-4 font-bold ${t.type === 'مصروف' ? 'text-rose-600' : t.type === 'دخل' ? 'text-emerald-600' : 'text-indigo-600'} text-left" dir="ltr">${t.type === 'مصروف' ? '-' : '+'}${t.amount.toFixed(2)}</td>
+                    <td class="p-4 text-center"><button onclick="window.deleteItem('${t.id}')" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-trash-can"></i></button></td>
+                `;
+                body.appendChild(row);
+            });
+
+            // Update Dashboard
+            document.getElementById('stat-balance').textContent = (stats.inc - stats.exp - stats.sav).toFixed(2);
+            document.getElementById('stat-engineering').textContent = stats.ing.toFixed(2);
+            document.getElementById('stat-commerce').textContent = (stats.commIn - stats.commOut).toFixed(2);
+            document.getElementById('stat-saving-rate').textContent = stats.inc > 0 ? ((stats.sav / stats.inc) * 100).toFixed(1) + '%' : '0%';
+            
+            document.getElementById('summary-income').textContent = stats.inc.toFixed(2);
+            document.getElementById('summary-expense').textContent = stats.exp.toFixed(2);
+            document.getElementById('summary-savings').textContent = stats.sav.toFixed(2);
+
+            // Expenses breakdown
+            const breakdown = document.getElementById('expenses-breakdown');
+            breakdown.innerHTML = '';
+            categories['مصروف'].forEach(cat => {
+                const amt = allTransactions.filter(t => t.category === cat).reduce((s, t) => s + t.amount, 0);
+                if (amt > 0) {
+                    const perc = (amt / stats.exp) * 100;
+                    breakdown.innerHTML += `
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-bold"><span>${cat}</span><span>${amt.toFixed(2)} د.أ</span></div>
+                            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-rose-500" style="width: ${perc}%"></div></div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Add Item
+        document.getElementById('finance-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const data = {
+                date: document.getElementById('f-date').value,
+                type: document.getElementById('f-type').value,
+                category: document.getElementById('f-category').value,
+                amount: parseFloat(document.getElementById('f-amount').value),
+                note: document.getElementById('f-note').value,
+                createdAt: new Date().toISOString()
+            };
+            await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'transactions'), data);
+            document.getElementById('f-amount').value = '';
+            document.getElementById('f-note').value = '';
+        };
+
+        // Global functions for buttons
+        window.deleteItem = async (id) => {
+            if (confirm('هل أنت متأكد من الحذف؟')) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'transactions', id));
+            }
+        };
+
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.className = 'tab-btn px-6 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100');
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('tab-btn-' + tabId).className = 'tab-btn px-6 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white shadow-lg';
+        };
+
+        window.exportToCSV = () => {
+            const header = "التاريخ,النوع,التصنيف,الملاحظة,المبلغ\n";
+            const rows = allTransactions.map(t => `${t.date},${t.type},${t.category},${t.note},${t.amount}`).join("\n");
+            const blob = new Blob(["\ufeff" + header + rows], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "financial_report.csv";
+            link.click();
+        };
+
+    </script>
+</body>
+</html>

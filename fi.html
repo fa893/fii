@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>النظام المالي للمهندس والتاجر</title>
+    <!-- إضافة سياسة الأمان للسماح بالاتصال بخدمات Firebase -->
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://*.firebaseio.com https://*.googleapis.com;">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -133,38 +135,56 @@
         </main>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (using <script type="module">) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // 1. استيراد مكتبات Firebase المطلوبة
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-        // Configuration
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // 2. إعدادات Firebase الخاصة بمشروعك (من Firebase Console)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvA1w5KI1-aOOID_B0KbhnDLVuXNgDHmk",
+            authDomain: "financial-system-8c95c.firebaseapp.com",
+            projectId: "financial-system-8c95c",
+            storageBucket: "financial-system-8c95c.firebasestorage.app",
+            messagingSenderId: "717835069857",
+            appId: "1:717835069857:web:0f946617196ade811f03e0",
+            measurementId: "G-66HRXL0D53"
+        };
+
+        // 3. تهيئة Firebase
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app); // يمكنك إزالة analytics إذا لم تحتجها
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'finance-app-v1';
 
+        // 4. معرف التطبيق (ثابت)
+        const appId = 'finance-app-v1';
+
+        // 5. متغيرات عامة
         let currentUser = null;
         let allTransactions = [];
 
+        // 6. التصنيفات (ثابتة)
         const categories = {
             'دخل': ['راتب هندسة الطاقة', 'عمولات تجارة إلكترونية', 'أخرى'],
             'مصروف': ['سكن وفواتير', 'تجارة إلكترونية (إعلانات)', 'تجارة إلكترونية (بضاعة)', 'تطوير الذات', 'مستلزمات عامة', 'أخرى'],
             'ادخار': ['صندوق الطوارئ', 'استثمارات', 'مدخرات عامة']
         };
 
-        // Initialize Categories
+        // 7. دالة تحديث التصنيفات عند تغيير النوع (تُستدعى من HTML)
         window.updateCategories = () => {
             const type = document.getElementById('f-type').value;
             const catSelect = document.getElementById('f-category');
             catSelect.innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
         };
-        updateCategories();
+        // تهيئة التصنيفات والتاريخ
+        window.updateCategories();
         document.getElementById('f-date').valueAsDate = new Date();
 
-        // Auth
+        // 8. تسجيل الدخول المجهول
         signInAnonymously(auth).catch(console.error);
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -174,18 +194,20 @@
             }
         });
 
-        // Load Data
+        // 9. دالة تحميل البيانات من Firestore
         function loadData(uid) {
             const q = query(collection(db, 'artifacts', appId, 'users', uid, 'transactions'));
             onSnapshot(q, (snapshot) => {
                 allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Sort manual since composite indexes aren't allowed
+                // فرز يدوي (يمكنك استخدام orderBy في الاستعلام بدلاً من ذلك)
                 allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
                 renderUI();
+            }, (error) => {
+                console.error('خطأ في تحميل البيانات:', error);
             });
         }
 
-        // Render Dashboard & Table
+        // 10. دالة عرض البيانات في لوحة التحكم والجدول
         function renderUI() {
             const body = document.getElementById('transactions-body');
             body.innerHTML = '';
@@ -193,7 +215,7 @@
             let stats = { ing: 0, commIn: 0, commOut: 0, inc: 0, exp: 0, sav: 0 };
 
             allTransactions.forEach(t => {
-                // Calc stats
+                // حساب الإحصائيات
                 if (t.type === 'دخل') {
                     stats.inc += t.amount;
                     if (t.category === 'راتب هندسة الطاقة') stats.ing += t.amount;
@@ -205,7 +227,7 @@
                     stats.sav += t.amount;
                 }
 
-                // Render Table Row
+                // عرض صف في الجدول
                 const row = document.createElement('tr');
                 row.className = "hover:bg-slate-50 transition-colors";
                 row.innerHTML = `
@@ -218,7 +240,7 @@
                 body.appendChild(row);
             });
 
-            // Update Dashboard
+            // تحديث لوحة التحكم
             document.getElementById('stat-balance').textContent = (stats.inc - stats.exp - stats.sav).toFixed(2);
             document.getElementById('stat-engineering').textContent = stats.ing.toFixed(2);
             document.getElementById('stat-commerce').textContent = (stats.commIn - stats.commOut).toFixed(2);
@@ -228,13 +250,13 @@
             document.getElementById('summary-expense').textContent = stats.exp.toFixed(2);
             document.getElementById('summary-savings').textContent = stats.sav.toFixed(2);
 
-            // Expenses breakdown
+            // تفاصيل المصاريف
             const breakdown = document.getElementById('expenses-breakdown');
             breakdown.innerHTML = '';
             categories['مصروف'].forEach(cat => {
                 const amt = allTransactions.filter(t => t.category === cat).reduce((s, t) => s + t.amount, 0);
                 if (amt > 0) {
-                    const perc = (amt / stats.exp) * 100;
+                    const perc = stats.exp > 0 ? (amt / stats.exp) * 100 : 0;
                     breakdown.innerHTML += `
                         <div class="space-y-1">
                             <div class="flex justify-between text-xs font-bold"><span>${cat}</span><span>${amt.toFixed(2)} د.أ</span></div>
@@ -245,15 +267,22 @@
             });
         }
 
-        // Add Item
+        // 11. إضافة معاملة جديدة
         document.getElementById('finance-form').onsubmit = async (e) => {
             e.preventDefault();
             if (!currentUser) return;
+
+            const amount = parseFloat(document.getElementById('f-amount').value);
+            if (isNaN(amount) || amount <= 0) {
+                alert('الرجاء إدخال مبلغ صحيح موجب');
+                return;
+            }
+
             const data = {
                 date: document.getElementById('f-date').value,
                 type: document.getElementById('f-type').value,
                 category: document.getElementById('f-category').value,
-                amount: parseFloat(document.getElementById('f-amount').value),
+                amount: amount,
                 note: document.getElementById('f-note').value,
                 createdAt: new Date().toISOString()
             };
@@ -262,7 +291,7 @@
             document.getElementById('f-note').value = '';
         };
 
-        // Global functions for buttons
+        // 12. دوال عامة للأزرار
         window.deleteItem = async (id) => {
             if (confirm('هل أنت متأكد من الحذف؟')) {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'transactions', id));
@@ -286,7 +315,6 @@
             link.download = "financial_report.csv";
             link.click();
         };
-
     </script>
 </body>
 </html>
